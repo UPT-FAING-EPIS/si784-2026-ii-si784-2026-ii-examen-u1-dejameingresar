@@ -3,7 +3,7 @@
    un unico formato para que la interfaz no tenga que interpretar respuestas. */
 
 const API = {
-  base: window.TASKFLOW_API ?? 'http://localhost:5080',
+  base: window.TASKFLOW_API || 'http://localhost:5080',
   token: localStorage.getItem('taskflow_token') ?? null,
   usuario: null,
 
@@ -40,7 +40,10 @@ const API = {
    * @throws {Error} Con el mensaje del servidor cuando la peticion falla.
    */
   async pedir(ruta, { metodo = 'GET', cuerpo = null, consulta = {} } = {}) {
-    const url = new URL(this.base + ruta);
+    // base vacia significa mismo origen: new URL exige un origen completo,
+    // asi que se usa location.origin cuando no hay URL de API configurada.
+    const origen = this.base || location.origin;
+    const url = new URL(origen.replace(/\/$/, '') + ruta, location.origin);
 
     for (const [clave, valor] of Object.entries(consulta)) {
       if (valor !== null && valor !== undefined && valor !== '') {

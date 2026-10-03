@@ -10,13 +10,12 @@ avance del equipo.
 
 | | |
 |---|---|
-| **Aplicacion publicada** | https://app-taskflow.azurewebsites.net |
+| **Aplicacion publicada** | https://taskflow-blue-alpha.vercel.app |
 | **Repositorio** | https://github.com/UPT-FAING-EPIS/si784-2026-ii-si784-2026-ii-examen-u1-dejameingresar |
 | **SonarCloud** | https://sonarcloud.io/dashboard?id=TaskFlowApi |
 
-> **SonarCloud ya tiene el analisis.** Azure y el cliente publicado requieren
-> una suscripcion con credito; ver
-> [Estado del despliegue](#estado-del-despliegue).
+> **SonarCloud y el cliente ya estan publicados.** La API .NET todavia no:
+> ver [Estado del despliegue](#estado-del-despliegue).
 
 ### Como se publico en SonarCloud
 
@@ -158,6 +157,43 @@ entre otros) se configuran en **Settings → Secrets and variables → Actions**
 entidad-relacion, clases, componentes y despliegue. Los produce
 `herramientas/generar-documentacion.mjs` en cada push a `main`.
 
+## Despliegue
+
+### Cliente web · Vercel
+
+El cliente es estatico puro, asi que Vercel lo sirve sin build:
+
+```bash
+cd web
+vercel --prod
+```
+
+`web/vercel.json` fija `outputDirectory` y las cabeceras de seguridad
+(CSP, `X-Frame-Options`, `X-Content-Type-Options`).
+
+La URL de la API se resuelve en `web/config.js`. Si `TASKFLOW_API` no esta
+definida, el cliente usa el origen desde el que se sirvio, de modo que el
+mismo build sirve para desarrollo y para produccion.
+
+### API .NET · contenedor
+
+Vercel no tiene runtime de .NET, asi que la API va a un hosting de
+contenedores. `Dockerfile` es multietapa y `infra/render.yaml` la describe:
+
+```bash
+# Render: lee el repositorio y construye el Dockerfile
+```
+
+Las variables de entorno necesarias son `ConnectionStrings__DefaultConnection`,
+`Jwt__Key`, `Jwt__Issuer` y `Jwt__Audience`.
+
+### En Azure
+
+`infra/main.tf` crea el grupo de recursos, PostgreSQL, el registro de
+contenedores y el App Service. `deploy.yml` construye la imagen, la publica
+en GitHub Container Registry y actualiza el servicio. Requiere los secretos
+`AZURE_CREDENTIALS` y `AZURE_WEBAPP_NAME`.
+
 ## Estado del despliegue
 
 | Parte | Estado |
@@ -166,6 +202,7 @@ entidad-relacion, clases, componentes y despliegue. Los produce
 | Cliente web | Verificado con datos reales. |
 | Pruebas de integracion | Requieren `createdb taskflow_test`. |
 | Imagen de contenedor | El `Dockerfile` es multietapa; se construye en la CI. |
-| Despliegue en Azure | Depende de una suscripcion con credito. |
+| Cliente web | Publicado en Vercel: https://taskflow-blue-alpha.vercel.app |
+| API .NET | Requiere un hosting de contenedores con credenciales de Azure. |
 | Semgrep | Se ejecuta en cada push; el informe se publica como artefacto. |
 | Snyk | Snyk Code exige un plan de pago. Semgrep cubre el analisis del codigo. |

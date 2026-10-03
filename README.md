@@ -14,8 +14,25 @@ avance del equipo.
 | **Repositorio** | https://github.com/UPT-FAING-EPIS/si784-2026-ii-si784-2026-ii-examen-u1-dejameingresar |
 | **SonarCloud** | https://sonarcloud.io/dashboard?id=TaskFlowApi |
 
-> La URL de Azure requiere una suscripcion con credito. Ver
+> **SonarCloud ya tiene el analisis.** Azure y el cliente publicado requieren
+> una suscripcion con credito; ver
 > [Estado del despliegue](#estado-del-despliegue).
+
+### Como se publico en SonarCloud
+
+El analisis lo genera el propio repositorio, con el workflow `sonar.yml`:
+
+```bash
+dotnet sonarscanner begin /k:$SONAR_TOKEN /o:upt-lab-calidad \
+  /d:sonar.host.url=https://sonarcloud.io
+dotnet build
+dotnet test --collect:"XPlat Code Coverage" --results-directory ./coverage
+dotnet sonarscanner end
+```
+
+El alcance se acota con `/d:sonar.sources=TaskFlow.Api,TaskFlow.Api.Tests`:
+el cliente web y la infraestructura los revisan Semgrep y tfsec, que dan mas
+detalle sobre esos lenguajes. El token llega por `/k:` y **nunca** se versiona.
 
 ## Que hace
 

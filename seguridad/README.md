@@ -32,8 +32,8 @@ cubren terreno distinto:
 | Escaneo | Resultado |
 |---|---|
 | gosec sobre `TaskFlow.Api` | **0 hallazgos** |
-| Dependency-Check sobre el grafo de dependencias | **0 vulnerabilidades conocidas** |
-| `dotnet list package --vulnerable` | **0 paquetes vulnerables** |
+| `dotnet list package --vulnerable` (20 transitivos) | **0 paquetes vulnerables** |
+| OWASP Dependency-Check | Configurado en el pipeline; ver la nota de abajo |
 
 ### App deliberadamente insegura
 
@@ -85,8 +85,16 @@ java -jar dependency-check.zip \
   --failOnCVSS 7
 ```
 
-La primera ejecución descarga la base de datos de la OWASP. Las siguientes
-usan la copia en caché.
+La primera ejecución descarga la base de avisos de la NVD, que a la fecha
+supera los **400.000 registros**. Sin una API key de la NVD tarda varias horas;
+conviene pedirla en https://nvd.nist.gov/developers/request-an-api-key y
+exportarla como `NVD_API_KEY`. Las ejecuciones siguientes usan la copia en
+caché.
+
+Por eso el resultado que se reporta en el artículo se obtuvo con
+`dotnet list package --vulnerable`, que consulta la misma base de
+vulnerabilidades para los paquetes publicados. Dependency-Check queda
+configurado en el pipeline, donde la base está cacheada.
 
 ## Automatización
 

@@ -48,8 +48,21 @@ Eso no es casualidad. La API usa paquetes en versiones con mantenimiento activo:
 | `Microsoft.AspNetCore.Authentication.JwtBearer` | 8.0.10 | maintained |
 | `Swashbuckle.AspNetCore` | 6.9.0 | maintained |
 
-La cadena completa, incluidas las dependencias transitivas, aparece en el
-informe HTML que genera el escaneo.
+La cadena completa son **20 paquetes transitivos**. Se listan con:
+
+```bash
+dotnet list TaskFlow.Api/TaskFlow.Api.csproj package --include-transitive --vulnerable
+```
+
+Y el resultado es el mismo: `The given project has no vulnerable packages`.
+
+Una nota de honestidad sobre el entorno: la primera ejecución de
+Dependency-Check descarga la base de avisos de la NVD, que a la fecha contiene
+más de 400.000 registros. Sin una API key de la NVD esa descarga tarda varias
+horas, así que el resultado de arriba se obtuvo con la herramienta de NuGet,
+que consulta la misma base de vulnerabilidades pero solo para los paquetes ya
+publicados. Dependency-Check se ejecuta igual dentro del pipeline, donde la
+base ya está cacheada y el corte por CVSS 7 es el que decide.
 
 ## Cómo se integra en la automatización
 
@@ -77,8 +90,13 @@ push; uno crítico sí.
 anotado en el diff del pull request. Eso convierte un informe que nadie lee en
 algo que se ve al revisar el cambio.
 
-**La base se cachea.** La primera ejecución descarga varios cientos de
-megabytes; las siguientes usan la copia guardada.
+**La base se cachea.** La primera ejecución descarga la base de avisos de la
+NVD —más de 400.000 registros—, y conviene hacerlo con una API key de la NVD
+para que no tarde horas. Las siguientes usan la copia guardada.
+
+**Una ejecución semanal.** La base de avisos cambia a diario: una
+vulnerabilidad puede publicarse después del último push. El workflow tiene un
+`cron` semanal por eso.
 
 ## Limitación honesta
 

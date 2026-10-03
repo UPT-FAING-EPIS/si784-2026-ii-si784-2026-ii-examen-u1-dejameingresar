@@ -1,0 +1,66 @@
+name: Aprovisionar infraestructura
+
+# Examen Unidad 1 · SI-784
+# Aprovisiona en Azure la base de datos, el registro de contenedores y el
+# servicio donde se publica la API, usando Terraform.
+
+on:
+  push:
+    branches: [main]
+    paths: ['infra/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    name: Plan y apply
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configurar Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Instalar Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Inicializar
+        working-directory: infra
+        run: terraform init
+
+      - name: Formato valido
+        working-directory: infra
+        run: terraform fmt -check
+
+      - name: Analisis estatico con tfsec
+        uses: aquasecurity/tfsec-action@v1
+        with:
+          directory: infra
+
+      - name: Plan
+        working-directory: infra
+        run: terraform plan -out=tfplan
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Aplicar
+        working-directory: infra
+        run: terraform apply -auto-approve tfplan
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Resumir en el comentario del commit
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.summary.addHeading('Infraestructura aplicada').addRaw('Terraform aplico correctamente.').write()

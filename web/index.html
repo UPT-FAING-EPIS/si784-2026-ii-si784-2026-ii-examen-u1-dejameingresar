@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskFlow · Gestion de proyectos y actividades</title>
+  <link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+
+<header class="barra">
+  <div class="barra__marca">
+    <span class="logo">TF</span>
+    <div>
+      <h1>TaskFlow</h1>
+      <p>Gestion de proyectos y actividades</p>
+    </div>
+  </div>
+
+  <div class="barra__sesion" id="sesion"></div>
+</header>
+
+<main id="vista" class="vista"></main>
+
+<!-- ── Pantalla de acceso ─────────────────────────────────────────── -->
+<section id="acceso" class="acceso oculto">
+  <div class="tarjeta acceso__tarjeta">
+    <h2>Iniciar sesion</h2>
+
+    <form id="form-acceso" novalidate>
+      <label for="correo">Correo electronico</label>
+      <input id="correo" name="correo" type="email" autocomplete="email"
+             placeholder="usuario@taskflow.pe" required>
+      <p class="error" id="error-correo"></p>
+
+      <label for="clave">Contrasena</label>
+      <input id="clave" name="clave" type="password" autocomplete="current-password"
+             placeholder="••••••••" required>
+      <p class="error" id="error-clave"></p>
+
+      <p class="error" id="error-acceso"></p>
+      <button type="submit" class="boton boton--primario">Entrar</button>
+    </form>
+
+    <div class="acceso__separador"><span>o</span></div>
+
+    <details class="registro">
+      <summary>Crear una cuenta nueva</summary>
+      <form id="form-registro" novalidate>
+        <label for="nombre">Nombre completo</label>
+        <input id="nombre" name="nombre" type="text" autocomplete="name"
+               placeholder="Ana Quispe" required>
+        <p class="error" id="error-nombre"></p>
+
+        <label for="correo-reg">Correo electronico</label>
+        <input id="correo-reg" name="correo" type="email" autocomplete="email"
+               placeholder="usuario@taskflow.pe" required>
+        <p class="error" id="error-correo-reg"></p>
+
+        <label for="clave-reg">Contrasena</label>
+        <input id="clave-reg" name="clave" type="password" autocomplete="new-password"
+               placeholder="Minimo 8 caracteres" required minlength="8">
+        <p class="error" id="error-clave-reg"></p>
+
+        <button type="submit" class="boton boton--secundario">Registrarme</button>
+      </form>
+    </details>
+  </div>
+</section>
+
+<!-- ── Panel de la aplicacion ────────────────────────────────────── -->
+<section id="panel" class="panel oculto">
+  <nav class="panel__nav">
+    <button data-vista="proyectos" class="activo">Proyectos</button>
+    <button data-vista="actividades">Actividades</button>
+    <button data-vista="seguimiento">Mi seguimiento</button>
+    <button data-vista="admin" id="tab-admin">Administracion</button>
+  </nav>
+
+  <div class="panel__cuerpo">
+    <!-- Proyectos -->
+    <div id="vista-proyectos" class="contenido">
+      <header class="contenido__cabecera">
+        <h2>Proyectos</h2>
+        <button class="boton boton--primario" id="btn-nuevo-proyecto">+ Nuevo proyecto</button>
+      </header>
+      <div id="lista-proyectos" class="rejilla"></div>
+    </div>
+
+    <!-- Actividades -->
+    <div id="vista-actividades" class="contenido oculto">
+      <header class="contenido__cabecera">
+        <h2>Actividades</h2>
+        <button class="boton boton--primario" id="btn-nueva-tarea">+ Nueva actividad</button>
+      </header>
+      <div class="filtros">
+        <label for="filtro-proyecto">Proyecto</label>
+        <select id="filtro-proyecto"></select>
+      </div>
+      <div id="lista-actividades"></div>
+    </div>
+
+    <!-- Seguimiento -->
+    <div id="vista-seguimiento" class="contenido oculto">
+      <header class="contenido__cabecera"><h2>Mi seguimiento</h2></header>
+      <div id="panel-seguimiento"></div>
+    </div>
+
+    <!-- Administracion -->
+    <div id="vista-admin" class="contenido oculto">
+      <header class="contenido__cabecera"><h2>Administracion</h2></header>
+      <div id="panel-admin"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Formulario de proyecto ────────────────────────────────────── -->
+<dialog id="dlg-proyecto">
+  <form id="form-proyecto" novalidate>
+    <h3 id="titulo-proyecto">Nuevo proyecto</h3>
+
+    <label for="p-nombre">Nombre del proyecto</label>
+    <input id="p-nombre" name="name" type="text" maxlength="150" required
+           placeholder="Portal de clientes">
+    <p class="error" id="error-p-nombre"></p>
+
+    <label for="p-descripcion">Descripcion</label>
+    <textarea id="p-descripcion" name="description" maxlength="1000" rows="3"
+              placeholder="Alcance y objetivos"></textarea>
+    <p class="error" id="error-p-descripcion"></p>
+
+    <div class="fila">
+      <div>
+        <label for="p-inicio">Fecha de inicio</label>
+        <input id="p-inicio" name="startDate" type="date" required>
+        <p class="error" id="error-p-inicio"></p>
+      </div>
+      <div>
+        <label for="p-fin">Fecha de fin</label>
+        <input id="p-fin" name="endDate" type="date">
+        <p class="error" id="error-p-fin"></p>
+      </div>
+    </div>
+
+    <label for="p-responsable">Responsable</label>
+    <select id="p-responsable" name="ownerId" required></select>
+    <p class="error" id="error-p-responsable"></p>
+
+    <footer class="dialogo__pie">
+      <button type="button" class="boton boton--plano" id="btn-cancelar-proyecto">Cancelar</button>
+      <button type="submit" class="boton boton--primario">Guardar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ── Formulario de actividad ───────────────────────────────────── -->
+<dialog id="dlg-tarea">
+  <form id="form-tarea" novalidate>
+    <h3 id="titulo-tarea">Nueva actividad</h3>
+
+    <label for="t-titulo">Titulo</label>
+    <input id="t-titulo" name="title" type="text" maxlength="200" required
+           placeholder="Maqueta del portal">
+    <p class="error" id="error-t-titulo"></p>
+
+    <label for="t-descripcion">Descripcion</label>
+    <textarea id="t-descripcion" name="description" maxlength="2000" rows="3"></textarea>
+    <p class="error" id="error-t-descripcion"></p>
+
+    <label for="t-proyecto">Proyecto</label>
+    <select id="t-proyecto" name="projectId" required></select>
+    <p class="error" id="error-t-proyecto"></p>
+
+    <label for="t-asignado">Asignar a</label>
+    <select id="t-asignado" name="assigneeId"></select>
+
+    <label for="t-vencimiento">Fecha limite</label>
+    <input id="t-vencimiento" name="dueDate" type="date" required>
+    <p class="error" id="error-t-vencimiento"></p>
+
+    <footer class="dialogo__pie">
+      <button type="button" class="boton boton--plano" id="btn-cancelar-tarea">Cancelar</button>
+      <button type="submit" class="boton boton--primario">Guardar</button>
+    </footer>
+  </form>
+</dialog>
+
+<!-- ── Editor de actividad ──────────────────────────────────────── -->
+<dialog id="dlg-editar">
+  <form id="form-editar" novalidate>
+    <h3 id="titulo-editar">Editar actividad</h3>
+
+    <label for="e-titulo">Titulo</label>
+    <input id="e-titulo" name="title" type="text" maxlength="200" required>
+    <p class="error" id="error-e-titulo"></p>
+
+    <label for="e-estado">Estado</label>
+    <select id="e-estado" name="status" required>
+      <option value="Pendiente">Pendiente</option>
+      <option value="EnProgreso">En progreso</option>
+      <option value="Completada">Completada</option>
+      <option value="Bloqueada">Bloqueada</option>
+    </select>
+    <p class="error" id="error-e-estado"></p>
+
+    <label for="e-avance">Avance: <output id="e-avance-valor">0%</output></label>
+    <input id="e-avance" name="progress" type="range" min="0" max="100" step="5" value="0">
+    <p class="error" id="error-e-avance"></p>
+
+    <label for="t-comentario">Agregar comentario</label>
+    <textarea id="t-comentario" name="comment" rows="2"
+              placeholder="Escribe un comentario"></textarea>
+
+    <footer class="dialogo__pie">
+      <button type="button" class="boton boton--plano" id="btn-cancelar-editar">Cancelar</button>
+      <button type="submit" class="boton boton--primario">Guardar</button>
+    </footer>
+  </form>
+</dialog>
+
+<script src="js/api.js"></script>
+<script src="js/validacion.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

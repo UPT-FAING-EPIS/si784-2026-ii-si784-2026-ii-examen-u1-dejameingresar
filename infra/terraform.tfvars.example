@@ -1,0 +1,7 @@
+# Copiar a terraform.tfvars y completar. Ese archivo NO se versiona.
+project_name = "taskflow"
+location     = "eastus"
+sql_admin_login = "taskflowadmin"
+
+# Clave de firma del token, de al menos 32 bytes.
+jwt_key = "cambie-esta-clave-por-una-de-64-caracteres"

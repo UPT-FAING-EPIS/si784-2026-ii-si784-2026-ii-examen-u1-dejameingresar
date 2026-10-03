@@ -1,0 +1,39 @@
+name: Generar documentacion
+
+# Examen Unidad 1 · SI-784
+# Genera el diccionario de datos y los diagramas en Mermaid a partir del
+# codigo, sin depender de herramientas de pago.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  documentacion:
+    name: Diccionario y diagramas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Generar
+        run: node herramientas/generar-documentacion.mjs
+
+      - name: Publicar
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add doc/ || true
+          git diff --staged --quiet || git commit -m "docs: regenera diccionario y diagramas"
+          git push || true

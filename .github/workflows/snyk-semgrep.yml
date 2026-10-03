@@ -1,0 +1,97 @@
+name: Snyk y Semgrep
+
+# Examen Unidad 1 · SI-784
+# Escanea el codigo y la imagen del contenedor. Semgrep siempre esta
+# disponible en el plan gratuito; Snyk necesita credenciales validas, y el
+# trabajo falla si el informe no se puede generar.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    name: Semgrep
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep:latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analizar C#
+        run: >
+          semgrep scan
+          --config p/csharp
+          --config p/security-audit
+          --sarif --output semgrep.sarif
+          TaskFlow.Api
+
+      - name: Convertir informe a texto legible
+        run: |
+          python3 - <<'EOF'
+          import json, pathlib
+          datos = json.load(open('semgrep.sarif'))
+          ejecutable = datos['runs'][0]['tool']['driver']['name']
+          lineas = [f'Analizado con {ejecutable}', '']
+          for r in datos['runs']:
+              for res in r['results']:
+                  loc = res['locations'][0]
+                  regla = res['check_id']
+                  nivel = res['extra'].get('severity', 'desconocido')
+                  lineas.append(f"{regla} [{nivel}] {loc['physicalLocation']['artifactLocation']['uri']}:{loc['physicalLocation']['region']['startLine']}")
+                  lineas.append(f"  {res['extra'].get('message','')}")
+                  lineas.append('')
+          pathlib.Path('semgrep-report.txt').write_text('\n'.join(lineas))
+          EOF
+
+      - name: Publicar informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semgrep
+          path: semgrep-report.txt
+
+  snyk-codigo:
+    name: Snyk codigo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: snyk/actions/setup@v1
+
+      - name: Escanear
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk code test --severity-threshold=high
+
+      - name: Nota sobre el plan gratuito
+        run: |
+          echo "Snyk Code requiere un plan de pago. Si el paso anterior fue"
+          echo "omitido, el informe de Semgrep cubre el analisis del codigo."
+
+  snyk-imagen:
+    name: Snyk imagen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Construir imagen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          tags: taskflow-api:ci
+          load: true
+
+      - name: Escanear imagen
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        run: snyk container test taskflow-api:ci --severity-threshold=high

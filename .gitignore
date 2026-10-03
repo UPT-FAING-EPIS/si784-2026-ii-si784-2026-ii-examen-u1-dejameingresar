@@ -1,0 +1,33 @@
+# .NET
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+coverage/
+*.coverage
+*.trx
+
+# Credenciales: nunca se versionan
+*.pfx
+*.key
+**/secrets.json
+.env
+.env.*
+infra/terraform.tfvars
+infra/backend.tf
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform/
+infra/tfplan
+
+# Herramientas
+node_modules/
+.vscode/
+.idea/
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db

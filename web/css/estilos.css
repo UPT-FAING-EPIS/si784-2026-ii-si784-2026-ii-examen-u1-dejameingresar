@@ -1,0 +1,389 @@
+/* TaskFlow · hoja de estilos
+   Interfaz sobria, sin dependencias externas. Los colores se declaran una
+   sola vez en :root y se reutilizan en todo el documento. */
+
+:root {
+  --azul: #2563eb;
+  --azul-oscuro: #1d4ed8;
+  --azul-suave: #eff6ff;
+  --verde: #059669;
+  --ambar: #d97706;
+  --rojo: #dc2626;
+  --rojo-suave: #fef2f2;
+  --gris-900: #0f172a;
+  --gris-700: #334155;
+  --gris-500: #64748b;
+  --gris-300: #cbd5e1;
+  --gris-100: #f1f5f9;
+  --blanco: #ffffff;
+  --radio: 10px;
+  --sombra: 0 1px 3px rgba(15, 23, 42, .1), 0 1px 2px rgba(15, 23, 42, .06);
+  --sombra-alta: 0 10px 25px rgba(15, 23, 42, .12);
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  color: var(--gris-900);
+  background: var(--gris-100);
+}
+
+.oculto { display: none !important; }
+
+/* ── Barra superior ─────────────────────────────────────────────── */
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .85rem 1.5rem;
+  background: var(--gris-900);
+  color: var(--blanco);
+  box-shadow: var(--sombra);
+}
+
+.barra__marca { display: flex; align-items: center; gap: .85rem; }
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  background: var(--azul);
+  border-radius: var(--radio);
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.barra h1 { margin: 0; font-size: 1.15rem; }
+.barra p { margin: .1rem 0 0; font-size: .78rem; color: var(--gris-300); }
+
+.barra__sesion { display: flex; align-items: center; gap: .75rem; font-size: .88rem; }
+.barra__sesion .rol {
+  padding: .15rem .5rem;
+  background: rgba(255, 255, 255, .15);
+  border-radius: 20px;
+  font-size: .72rem;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+}
+
+/* ── Botones ────────────────────────────────────────────────────── */
+.boton {
+  padding: .5rem .95rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font: inherit;
+  font-size: .88rem;
+  cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+
+.boton--primario { background: var(--azul); color: var(--blanco); }
+.boton--primario:hover { background: var(--azul-oscuro); }
+
+.boton--secundario {
+  background: var(--blanco);
+  color: var(--gris-900);
+  border-color: var(--gris-300);
+}
+.boton--secundario:hover { border-color: var(--gris-500); }
+
+.boton--plano { background: transparent; color: var(--gris-500); }
+.boton--plano:hover { color: var(--gris-900); }
+
+.boton--peligro { background: transparent; color: var(--rojo); border-color: transparent; }
+.boton--peligro:hover { background: var(--rojo-suave); }
+
+.boton--mini { padding: .25rem .6rem; font-size: .8rem; }
+
+/* ── Pantalla de acceso ─────────────────────────────────────────── */
+.acceso {
+  display: grid;
+  place-items: center;
+  min-height: calc(100vh - 62px);
+  padding: 2rem 1rem;
+}
+
+.acceso__tarjeta {
+  width: 100%;
+  max-width: 420px;
+  padding: 2rem;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-alta);
+}
+
+.acceso__tarjeta h2 { margin: 0 0 1.25rem; font-size: 1.3rem; }
+
+.acceso__separador {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: 1.25rem 0;
+  color: var(--gris-500);
+  font-size: .8rem;
+}
+.acceso__separador::before,
+.acceso__separador::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--gris-300);
+}
+
+.registro summary {
+  cursor: pointer;
+  color: var(--azul);
+  font-size: .88rem;
+  padding: .35rem 0;
+}
+
+/* ── Formularios ────────────────────────────────────────────────── */
+label {
+  display: block;
+  margin: .8rem 0 .3rem;
+  font-size: .82rem;
+  font-weight: 600;
+  color: var(--gris-700);
+}
+
+input, select, textarea {
+  width: 100%;
+  padding: .5rem .65rem;
+  border: 1px solid var(--gris-300);
+  border-radius: 8px;
+  font: inherit;
+  font-size: .9rem;
+  background: var(--blanco);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: 2px solid var(--azul);
+  outline-offset: -1px;
+  border-color: var(--azul);
+}
+
+input.invalido, select.invalido, textarea.invalido {
+  border-color: var(--rojo);
+  background: var(--rojo-suave);
+}
+
+textarea { resize: vertical; font-family: inherit; }
+
+input[type="range"] { padding: 0; border: none; background: transparent; }
+
+.fila { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+.error {
+  margin: .25rem 0 0;
+  min-height: 1rem;
+  font-size: .78rem;
+  color: var(--rojo);
+}
+
+.error:empty { min-height: 0; }
+
+#form-acceso button, #form-registro button { width: 100%; margin-top: .5rem; }
+
+/* ── Panel ──────────────────────────────────────────────────────── */
+.panel__nav {
+  display: flex;
+  gap: .25rem;
+  padding: 0 1.5rem;
+  background: var(--blanco);
+  border-bottom: 1px solid var(--gris-300);
+}
+
+.panel__nav button {
+  padding: .85rem 1.1rem;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  font: inherit;
+  font-size: .9rem;
+  color: var(--gris-500);
+  cursor: pointer;
+}
+
+.panel__nav button:hover { color: var(--gris-900); }
+.panel__nav button.activo { color: var(--azul); border-bottom-color: var(--azul); font-weight: 600; }
+
+.panel__cuerpo { max-width: 1180px; margin: 0 auto; padding: 1.5rem; }
+
+.contenido__cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.25rem;
+}
+
+.contenido__cabecera h2 { margin: 0; font-size: 1.25rem; }
+
+.filtros {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-bottom: 1rem;
+}
+.filtros label { margin: 0; }
+.filtros select { width: auto; min-width: 220px; }
+
+/* ── Rejilla de proyectos ───────────────────────────────────────── */
+.rejilla {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1rem;
+}
+
+.proyecto {
+  padding: 1.1rem;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+  border-left: 4px solid var(--azul);
+}
+
+.proyecto h3 { margin: 0 0 .35rem; font-size: 1rem; }
+.proyecto__desc { margin: 0 0 .75rem; font-size: .84rem; color: var(--gris-500); }
+.proyecto__meta { display: flex; flex-wrap: wrap; gap: .4rem .9rem; font-size: .78rem; color: var(--gris-500); }
+.proyecto__acciones { display: flex; gap: .4rem; margin-top: .9rem; padding-top: .75rem; border-top: 1px solid var(--gris-100); }
+
+/* ── Barra de progreso ──────────────────────────────────────────── */
+.barra-progreso {
+  height: 7px;
+  background: var(--gris-100);
+  border-radius: 20px;
+  overflow: hidden;
+  margin-top: .5rem;
+}
+
+.barra-progreso span {
+  display: block;
+  height: 100%;
+  background: var(--verde);
+  border-radius: 20px;
+  transition: width .3s;
+}
+
+/* ── Actividades ────────────────────────────────────────────────── */
+.actividad {
+  display: grid;
+  grid-template-columns: 4px 1fr auto;
+  gap: .9rem;
+  align-items: start;
+  padding: .9rem 1rem;
+  margin-bottom: .6rem;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.actividad__marca { width: 4px; min-height: 42px; border-radius: 20px; background: var(--gris-300); }
+.actividad.completada .actividad__marca { background: var(--verde); }
+.actividad.en-progreso .actividad__marca { background: var(--azul); }
+.actividad.bloqueada .actividad__marca { background: var(--ambar); }
+
+.actividad h4 { margin: 0 0 .25rem; font-size: .93rem; }
+.actividad__meta { display: flex; flex-wrap: wrap; gap: .3rem .8rem; font-size: .77rem; color: var(--gris-500); }
+
+.etiqueta {
+  display: inline-block;
+  padding: .1rem .5rem;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+.etiqueta--pendiente { background: var(--gris-100); color: var(--gris-700); }
+.etiqueta--enprogreso { background: var(--azul-suave); color: var(--azul-oscuro); }
+.etiqueta--completada { background: #ecfdf5; color: var(--verde); }
+.etiqueta--bloqueada { background: #fffbeb; color: var(--ambar); }
+
+.actividad__avance { min-width: 130px; text-align: right; }
+.actividad__avance output { font-size: .8rem; font-weight: 600; color: var(--gris-700); }
+
+.vacio {
+  padding: 2.5rem 1rem;
+  text-align: center;
+  color: var(--gris-500);
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+/* ── Panel de seguimiento ───────────────────────────────────────── */
+.tarjetas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+
+.tarjeta-dato {
+  padding: 1rem;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+.tarjeta-dato strong { display: block; font-size: 1.7rem; line-height: 1.1; }
+.tarjeta-dato span { font-size: .8rem; color: var(--gris-500); }
+
+.vacio-panel {
+  padding: 1.5rem;
+  background: var(--blanco);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra);
+}
+
+/* ── Dialogos ───────────────────────────────────────────────────── */
+dialog {
+  width: 100%;
+  max-width: 480px;
+  padding: 1.75rem;
+  border: none;
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-alta);
+}
+
+dialog::backdrop { background: rgba(15, 23, 42, .5); }
+dialog h3 { margin: 0 0 1rem; font-size: 1.1rem; }
+
+.dialogo__pie {
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--gris-100);
+}
+
+/* ── Aviso flotante ─────────────────────────────────────────────── */
+#aviso {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  padding: .7rem 1.1rem;
+  border-radius: 8px;
+  font-size: .86rem;
+  color: var(--blanco);
+  background: var(--gris-900);
+  box-shadow: var(--sombra-alta);
+  z-index: 100;
+}
+
+#aviso.exito { background: var(--verde); }
+#aviso.error { background: var(--rojo); }
+
+@media (max-width: 620px) {
+  .fila { grid-template-columns: 1fr; }
+  .panel__nav { overflow-x: auto; padding: 0 .5rem; }
+  .panel__cuerpo { padding: 1rem; }
+  .actividad { grid-template-columns: 4px 1fr; }
+  .actividad__avance { grid-column: 2; text-align: left; min-width: 0; }
+}

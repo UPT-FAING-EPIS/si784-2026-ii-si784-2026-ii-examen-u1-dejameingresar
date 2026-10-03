@@ -1,0 +1,49 @@
+# Escaneo de dependencias con OWASP Dependency-Check
+#
+# Analiza los archivos de proyecto y produce un informe con las
+# vulnerabilidades conocidas (CVE) de cada dependencia transitiva, usando la
+# base de datos maintained por la OWASP Foundation.
+#
+# Es una herramienta distinta a las de los laboratorios: Semgrep y Sonar
+# revisan el codigo propio, Dependency-Check revisa las librerias de terceros
+# que ese codigo arrastra.
+#
+# Uso:
+#   dependency-check --project . --scan . --out ./informes/dependencias
+#
+# La primera ejecucion descarga la base de datos (~300 MB) y tarda bastante.
+# Las siguientes usan la base en cache.
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS analisis
+
+WORKDIR /fuente
+
+# Las herramientas de analisis se instalan en un paso aparte para que la imagen
+# final no las lleve.
+RUN dotnet tool install --global dotnet-sonarscanner
+
+# OWASP Dependency-Check se ejecuta desde su CLI de Java.
+# La 12.1+ requiere Java 17 o superior y distribuye dependency-check.sh
+# en lugar del .pl, que solo funcionaba con Java 8.
+ENV DC_VERSION=12.1.8
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl unzip default-jre-headless \
+    && curl -sSL "https://github.com/dependency-check/DependencyCheck/releases/download/v${DC_VERSION}/dependency-check-${DC_VERSION}-release.zip" -o /tmp/dc.zip \
+    && unzip -q /tmp/dc.zip -d /opt \
+    && rm /tmp/dc.zip \
+    && ln -s /opt/dependency-check/bin/dependency-check.sh /usr/local/bin/dependency-check \
+    && chmod +x /opt/dependency-check/bin/dependency-check.sh
+
+# Copiar primero los archivos de proyecto aprovecha la cache de capas.
+COPY TaskFlow.Api/TaskFlow.Api.csproj TaskFlow.Api/
+RUN dotnet restore TaskFlow.Api/TaskFlow.Api.csproj
+
+COPY . .
+
+# La base de datos se guarda en el home para que las ejecuciones siguientes
+# no la vuelvan a descargar.
+ENV DC_DATA_HOME=/opt/odc-data
+
+CMD ["dependency-check", "--project", "TaskFlow API", "--scan", "TaskFlow.Api", \
+     "--out", "./informes/dependencias", "--format", "HTML", "--format", "JSON", \
+     "--noupdate"]

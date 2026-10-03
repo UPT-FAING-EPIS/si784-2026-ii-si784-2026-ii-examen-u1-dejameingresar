@@ -1,0 +1,169 @@
+{
+	"Golang errors": {},
+	"Issues": [
+		{
+			"severity": "HIGH",
+			"confidence": "LOW",
+			"cwe": {
+				"id": "798",
+				"url": "https://cwe.mitre.org/data/definitions/798.html"
+			},
+			"rule_id": "G101",
+			"details": "Potential hardcoded credentials: RSA private key",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "25: // G101: clave privada embebida en el fuente.\n26: const privateKeyPem = `-----BEGIN RSA PRIVATE KEY-----\n27: MIIEowIBAAKCAQEA0Z3VS5JJcds3xfn/ygWyF0qJdhk8FxKx1mY3dqPPXvJc\n28: -----END RSA PRIVATE KEY-----`\n29: \n",
+			"line": "26-28",
+			"column": "7",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "HIGH",
+			"confidence": "LOW",
+			"cwe": {
+				"id": "798",
+				"url": "https://cwe.mitre.org/data/definitions/798.html"
+			},
+			"rule_id": "G101",
+			"details": "Potential hardcoded credentials",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "22: // esta escrito en el codigo.\n23: const apiPassword = \"s3cr3t-de-ejemplo-no-usar\"\n24: \n",
+			"line": "23",
+			"column": "7",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "328",
+				"url": "https://cwe.mitre.org/data/definitions/328.html"
+			},
+			"rule_id": "G401",
+			"details": "Use of weak cryptographic primitive",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "57: \tmd := md5.Sum([]byte(password))\n58: \tsha := sha1.Sum([]byte(password))\n59: \treturn fmt.Sprintf(\"%x%x\", md, sha)\n",
+			"line": "58",
+			"column": "9",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "328",
+				"url": "https://cwe.mitre.org/data/definitions/328.html"
+			},
+			"rule_id": "G401",
+			"details": "Use of weak cryptographic primitive",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "56: func huella(password string) string {\n57: \tmd := md5.Sum([]byte(password))\n58: \tsha := sha1.Sum([]byte(password))\n",
+			"line": "57",
+			"column": "8",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "676",
+				"url": "https://cwe.mitre.org/data/definitions/676.html"
+			},
+			"rule_id": "G114",
+			"details": "Use of net/http serve function that has no support for setting timeouts",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "96: \tlog.Println(tokenDeSesion(nil))\n97: \tlog.Fatal(http.ListenAndServe(\":8080\", nil))\n98: }\n",
+			"line": "97",
+			"column": "12",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "78",
+				"url": "https://cwe.mitre.org/data/definitions/78.html"
+			},
+			"rule_id": "G204",
+			"details": "Subprocess launched with variable",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "36: func convertir(mime string) (string, error) {\n37: \tsalida, err := exec.Command(\"file\", \"-b\", mime).Output()\n38: \treturn string(salida), err\n",
+			"line": "37",
+			"column": "17",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "22",
+				"url": "https://cwe.mitre.org/data/definitions/22.html"
+			},
+			"rule_id": "G304",
+			"details": "Potential file inclusion via variable",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "31: func leerArchivo(ruta string) ([]byte, error) {\n32: \treturn ioutil.ReadFile(ruta)\n33: }\n",
+			"line": "32",
+			"column": "9",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": null,
+			"rule_id": "G710",
+			"details": "Open redirect via taint analysis",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "89: \t// G107: la redireccion se construye con datos del usuario.\n90: \thttp.Redirect(w, r, \"/perfil?u=\"+nombre, http.StatusFound)\n91: }\n",
+			"line": "90",
+			"column": "15",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "327",
+				"url": "https://cwe.mitre.org/data/definitions/327.html"
+			},
+			"rule_id": "G505",
+			"details": "Blocklisted import crypto/sha1: weak cryptographic primitive",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "8: \t\"crypto/md5\"\n9: \t\"crypto/sha1\"\n10: \t\"fmt\"\n",
+			"line": "9",
+			"column": "2",
+			"nosec": false,
+			"suppressions": null
+		},
+		{
+			"severity": "MEDIUM",
+			"confidence": "HIGH",
+			"cwe": {
+				"id": "327",
+				"url": "https://cwe.mitre.org/data/definitions/327.html"
+			},
+			"rule_id": "G501",
+			"details": "Blocklisted import crypto/md5: weak cryptographic primitive",
+			"file": "/home/prodriguez/examen-u1/seguridad/banco-vulnerable/main.go",
+			"code": "7: import (\n8: \t\"crypto/md5\"\n9: \t\"crypto/sha1\"\n",
+			"line": "8",
+			"column": "2",
+			"nosec": false,
+			"suppressions": null
+		}
+	],
+	"Stats": {
+		"files": 1,
+		"lines": 98,
+		"nosec": 0,
+		"found": 10
+	},
+	"GosecVersion": "2.29.0"
+}

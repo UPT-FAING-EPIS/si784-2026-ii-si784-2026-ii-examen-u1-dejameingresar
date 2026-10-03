@@ -1,0 +1,131 @@
+name: Escaneo de seguridad
+
+# Automatizaciones de seguridad que complementan a sonar.yml y
+# snyk-semgrep.yml, usando herramientas distintas:
+#
+#   - OWASP Dependency-Check: vulnerabilidades conocidas (CVE) en las
+#     dependencias transitivas, contra la base de datos de la OWASP.
+#   - gosec: analisis estatico del codigo Go con reglas mapeadas a CWE.
+#   - tfsec: analisis estatico de la infraestructura como codigo.
+#
+# La diferencia con los laboratorios: ahi se reviso el codigo con SonarCloud,
+# Semgrep y Snyk; aqui se cubren las dependencias, un lenguaje distinto, y
+# la infraestructura.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # La base de avisos cambia a diario: revisar una vez por semana detecta
+    # vulnerabilidades publicadas despues del ultimo push.
+    - cron: "17 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  dependencias:
+    name: OWASP Dependency-Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cache de la base de datos
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/caches
+          key: dependency-check-${{ hashFiles('**/*.csproj') }}
+          restore-keys: dependency-check-
+
+      - name: Restaurar dependencias
+        run: dotnet restore TaskFlow.Api/TaskFlow.Api.csproj
+
+      - name: Escanear
+        run: |
+          dependency-check \
+            --project "TaskFlow API" \
+            --scan TaskFlow.Api \
+            --out ./informes/dependencias \
+            --format HTML \
+            --format SARIF \
+            --data ~/.gradle/caches \
+            --failOnCVSS 7
+
+      - name: Publicar el informe
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependency-check
+          path: ./informes/dependencias
+          retention-days: 30
+
+  gosec:
+    name: gosec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Instalar gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.29.0
+
+      - name: Escanear el codigo Go
+        run: |
+          $(go env GOPATH)/bin/gosec -no-fail -fmt=json -out=gosec.json ./seguridad/banco-vulnerable/...
+
+      - name: Resumen legible
+        if: always()
+        run: |
+          python3 - <<'EOF'
+          import json, pathlib
+          d = json.load(open('gosec.json'))
+          iss = d.get('Issues') or []
+          st = d.get('Stats') or {}
+          lineas = [
+              f"Archivos: {st.get('files')} | Lineas: {st.get('lines')} | Hallazgos: {st.get('issues')}",
+              "",
+          ]
+          for i in iss:
+              lineas.append(f"[{i['severity']}] {i['rule_id']} L{i['line']} {i['details']}")
+          pathlib.Path('gosec-resumen.txt').write_text('\n'.join(lineas))
+          EOF
+
+      - name: Publicar el resumen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gosec
+          path: gosec-resumen.txt
+
+  infraestructura:
+    name: tfsec
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analizar Terraform
+        uses: aquasecurity/tfsec-action@v1
+        with:
+          directory: infra
+          soft_fail: true
+
+      - name: Publicar el resultado
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfsec
+          path: ${{ env.TFSEC_OUTPUT }}

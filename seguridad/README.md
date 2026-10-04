@@ -1,114 +1,85 @@
-# Escaneo de vulnerabilidades · TaskFlow
+# Escaneo de vulnerabilidades · Actividad Grupal 1
 
-Material de la tarea de Calidad y Pruebas de Software: artículos sobre
-análisis de vulnerabilidades con herramientas distintas a las usadas en los
+Material de SAST (Static Application Security Testing): dos artículos sobre
+análisis de vulnerabilidades con herramientas que **no** se usaron en los
 laboratorios, más el guion del video.
-
-## Qué hay aquí
-
-| Archivo | Qué es |
-|---|---|
-| `articulo/01-dependency-check.md` | Artículo sobre OWASP Dependency-Check |
-| `articulo/02-gosec.md` | Artículo sobre gosec |
-| `guion-video.md` | Guion del video de máximo 5 minutos |
-| `informe-gosec-vulnerable.json` | Hallazgos de gosec sobre la app insegura |
-| `banco-vulnerable/` | App Go deliberadamente insegura, para demostrar gosec |
-| `Dockerfile.dependency-check` | Imagen para ejecutar Dependency-Check |
 
 ## Herramientas y por qué estas
 
-Los laboratorios ya usaron SonarCloud, Semgrep, Snyk y tfsec. Estas dos
-cubren terreno distinto:
+Los laboratorios usaron SonarCloud, Semgrep, Snyk y tfsec. Estas dos cubren
+terreno que ninguna de ellas tocó:
 
 | Herramienta | Qué analiza | Fuente |
 |---|---|---|
-| OWASP Dependency-Check | Vulnerabilidades conocidas (CVE) en dependencias | Base de datos de la OWASP Foundation |
+| OWASP Dependency-Check | Vulnerabilidades conocidas (CVE) en dependencias | Base de la OWASP Foundation |
 | gosec | Patrones peligrosos en el código, con reglas CWE | securego/gosec |
 
-## Resultados obtenidos
+## Resultados, todos ejecutados
 
-### TaskFlow (código real)
+### gosec sobre la app de demostración
 
-| Escaneo | Resultado |
+17 hallazgos: 5 HIGH, 11 MEDIUM, 1 LOW. Informe en `informe-gosec.json`.
+
+| Regla | Qué detecta |
 |---|---|
-| gosec sobre `TaskFlow.Api` | **0 hallazgos** |
-| `dotnet list package --vulnerable` (20 transitivos) | **0 paquetes vulnerables** |
-| OWASP Dependency-Check | Configurado en el pipeline; ver la nota de abajo |
+| G101 | Credencial y clave privada RSA en el código |
+| G702 | Inyección de comandos (taint) |
+| G703 | Recorrido de rutas (taint) |
+| G705 | XSS (taint) |
+| G710 | Redirección abierta (taint) |
+| G112 | Slowloris por falta de timeouts |
+| G202 | SQL por concatenación de cadenas |
+| G204 | Subproceso con variable |
+| G304 | Inclusión de archivo vía variable |
+| G401/G501/G505 | MD5 y SHA1 |
+| G104 | Errores sin manejar |
 
-### App deliberadamente insegura
+### Dependencias
 
-Para comprobar que las herramientas detectan de verdad, `banco-vulnerable/`
-contiene los fallos comunes de código Go:
+`dotnet list package --include-transitive --vulnerable` sobre el proyecto de
+ejemplo: **0 vulnerabilidades** en 20 paquetes transitivos.
 
-```
-[HIGH  ] G101   L23     Credencial escrita en el código
-[HIGH  ] G101   L26-28  Clave privada RSA embebida
-[MEDIUM] G114   L97     ListenAndServe sin timeouts
-[MEDIUM] G204   L37     Subproceso con variable
-[MEDIUM] G304   L32     Inclusión de archivo vía variable
-[MEDIUM] G401   L57     Primitiva criptográfica débil
-[MEDIUM] G401   L58     Primitiva criptográfica débil
-[MEDIUM] G501   L8      Import bloqueado crypto/md5
-[MEDIUM] G505   L9      Import bloqueado crypto/sha1
-[MEDIUM] G710   L90     Redirección abierta por análisis de taint
-```
+## Advertencia sobre `banco-vulnerable/`
 
-**10 hallazgos.** G710 es el interesante: no busca un patrón, sigue el valor
-de `nombre` desde la petición hasta la redirección.
+Contiene código inseguro **a propósito**, escrito para la demostración del
+artículo. No desplegar, no exponer, no usar con datos reales.
 
-## Reproducir los escaneos
+## Reproducir
 
 ### gosec
 
 ```bash
+# necesita el compilador de Go
 curl -sSfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh
 
-# sobre el codigo real
-./bin/gosec -no-fail ./TaskFlow.Api/...
-
-# sobre la app insegura
-cd banco-vulnerable && ../bin/gosec -no-fail ./...
+cd banco-vulnerable
+gosec -no-fail -fmt=json -out=informe.json ./...
 ```
 
-**Nota:** gosec necesita el toolchain de Go instalado. Sin él reporta
-`Files: 0` y termina sin errores, lo que parece un escaneo limpio cuando en
-realidad no analysó nada.
+**Advertencia:** sin el compilador de Go, gosec termina sin errores y reporta
+`Files: 0`. Eso no es un escaneo limpio: es un escaneo que no ocurrió.
 
 ### OWASP Dependency-Check
 
 ```bash
-java -jar dependency-check.zip \
-  --project "TaskFlow API" \
-  --scan TaskFlow.Api \
-  --out informes/dependencias \
-  --format HTML --format SARIF \
-  --failOnCVSS 7
+dependency-check --project "TaskFlow API" --scan TaskFlow.Api \
+                 --out informes/dependencias \
+                 --format HTML --format SARIF --failOnCVSS 7
 ```
 
-La primera ejecución descarga la base de avisos de la NVD, que a la fecha
-supera los **400.000 registros**. Sin una API key de la NVD tarda varias horas;
-conviene pedirla en https://nvd.nist.gov/developers/request-an-api-key y
-exportarla como `NVD_API_KEY`. Las ejecuciones siguientes usan la copia en
-caché.
-
-Por eso el resultado que se reporta en el artículo se obtuvo con
-`dotnet list package --vulnerable`, que consulta la misma base de
-vulnerabilidades para los paquetes publicados. Dependency-Check queda
-configurado en el pipeline, donde la base está cacheada.
+La primera ejecución descarga la base de la NVD (más de 400.000 registros).
+Sin API key tarda horas; con una key gratuita baja a minutos:
+https://nvd.nist.gov/developers/request-an-api-key
 
 ## Automatización
 
-`.github/workflows/security.yml` ejecuta los tres escaneos:
-
-- en cada `push` a `main` y en cada pull request
-- y una vez por semana (`cron`), porque la base de avisos cambia a diario y
-  una vulnerabilidad puede publicarse después del último push
-
+`.github/workflows/security.yml` corre los tres escaneos en cada `push`, en cada
+pull request y una vez por semana, porque la base de avisos cambia a diario.
 Dependency-Check corta el pipeline en CVSS 7 y sube el resultado en SARIF, que
 GitHub muestra anotado en el pull request.
 
-## Advertencia sobre `banco-vulnerable/`
+## Publicar
 
-Esa carpeta contiene código inseguro **a propósito**, para la demostración del
-artículo. No desplegar, no exponer, no usar con datos reales. El pipeline de
-integración continua la escanea, pero no la compila ni la publica.
+`PUBLICAR.md` tiene el comando exacto para subir ambos artículos a Dev.to con
+una API key. Los artículos ya incluyen los enlaces al repositorio y a la
+aplicación, que es lo que pide la consigna.

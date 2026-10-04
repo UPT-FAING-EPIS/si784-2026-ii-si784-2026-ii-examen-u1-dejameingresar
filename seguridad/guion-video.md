@@ -44,7 +44,7 @@ dependency-check --project "TaskFlow API" --scan TaskFlow.Api \
 
 **Voz:**
 > El resultado: cero vulnerabilidades conocidas en el grafo completo de
-> dependencias, incluidas las transitivas.
+> dependencias. Son veinte paquetes, contando los transitivos.
 
 **Pantalla:** el informe HTML con el resumen en cero.
 
@@ -63,11 +63,11 @@ gosec -no-fail ./TaskFlow.Api/...
 ```
 
 **Voz:**
-> Cero hallazgos. El acceso a datos va por Entity Framework, sin SQL
-> concatenado; las contraseñas usan PBKDF2, no MD5 ni SHA1; y no hay secretos
-> en el fuente.
+> gosec está escrito en Go, así que sobre una API en C# no tiene nada que
+> decir. No es que el código esté limpio: es que la herramienta no aplica.
+> Por eso el caso de estudio es una aplicación Go.
 
-**Pantalla:** el resumen con `Issues: 0`.
+**Pantalla:** el resumen con `Files: 0`.
 
 ---
 
@@ -89,11 +89,18 @@ gosec -no-fail ./banco-vulnerable/...
 **Pantalla:** la salida con los 10 hallazgos.
 
 **Voz:**
-> Diez hallazgos, clasificados por severidad y con su CWE. Dos son de
-> severidad alta: una credencial y una clave privada RSA escritas en el
-> código.
+> Diecisiete hallazgos: cinco de severidad alta, once medios y uno bajo.
+> Entre los altos hay una credencial en el código, una clave privada RSA
+> embebida, y tres encontrados por análisis de taint.
 
-**Pantalla:** resaltar las líneas 23 y 26 del reporte.
+**Pantalla:** resaltar las filas HIGH de la tabla.
+
+**Voz:**
+> Esto último es lo interesante. G204 dice "subproceso con variable", que es
+> cierto pero genérico. G702, sobre la misma línea, dice inyección de
+> comandos, porque sabe que el valor viene de la petición sin validar.
+
+**Pantalla:** recorriendo la tabla, señalando G204 y G702 en la misma línea.
 
 ---
 

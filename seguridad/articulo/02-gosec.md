@@ -3,11 +3,12 @@
 En los laboratorios analizamos el código de una aplicación con SonarCloud,
 Snyk y Semgrep. En este ejercicio el punto de mira es el mismo código fuente,
 pero con una herramienta que no usamos en los labs: **gosec**, el analizador
-estático que forma parte del ecosistema de Go y publica reglas mapeadas a CWE
-de la OWASP.
+estático estándar del ecosistema de Go, que publica reglas mapeadas a CWE de
+la OWASP.
 
-Para demostrar que la herramienta funciona de verdad, la aplicamos a dos
-códigos: el nuestro y uno escrito a propósito con fallos comunes.
+Para demostrar que la herramienta funciona de verdad, la aplicamos a una
+aplicación escrita a propósito con los fallos más comunes. El resultado son
+**17 hallazgos**, cinco de ellos de severidad alta.
 
 <!-- more -->
 
@@ -15,134 +16,141 @@ códigos: el nuestro y uno escrito a propósito con fallos comunes.
 
 gosec analiza el código buscando patrones que se sabe que son peligrosos:
 
-- credenciales escritas en el fuente
+- credenciales o claves privadas escritas en el fuente
 - comandos del sistema construidos con variables
 - rutas de archivo tomadas de entrada externa
 - algoritmos de hash débiles
 - consultas SQL por concatenación de cadenas
+- redirecciones y plantillas construidas con datos del usuario
 
-Cada regla tiene un identificador (`G###`) y un CWE asociado, así que el
-resultado se puede mapear a lo que exige la norma, no quedarse en un "algo
-está mal aquí".
-
-Instalación en Linux:
+Cada regla tiene un identificador (`G###`), una severidad y un CWE asociado,
+así que el resultado se puede mapear a lo que exige la norma y no quedarse en
+un "algo está mal aquí".
 
 ```bash
 curl -sSfL https://raw.githubusercontent.com/securego/gosec/master/install.sh | sh
+gosec -no-fail -fmt=json -out=informe.json ./...
 ```
 
-## Resultado sobre TaskFlow: cero hallazgos
+Un detalle que puede arruinar el resultado: gosec necesita el compilador de Go
+instalado. Sin él termina sin errores y reporta `Files: 0`, lo que parece un
+escaneo limpio cuando en realidad no analysó nada.
 
-```bash
-gosec -fmt=json -out=informe-gosec.json ./TaskFlow.Api
-```
+## La aplicación de prueba
 
-Salida:
+Es un servidor web pequeño, en un solo archivo, con seis rutas. Cada una contiene
+un fallo deliberado:
 
-```
-Summary:
-  Gosec  : 2.29.0
-  Files  : 17
-  Lines  : 1234
-  Issues : 0
-```
+| Ruta | Fallo introducido |
+|---|---|
+| `/saludo` | plantilla HTML sin escapar y redirección con datos del usuario |
+| `/descarga` | escritura en ruta construida sin restringir |
+| `/archivo` | lectura de archivo con ruta de la petición |
+| `/token` | secreto concatenado sin validar |
+| `/tipo` | comando del sistema con valor del usuario |
+| `/hash` | MD5 y SHA1 para derivar contraseñas |
 
-Cero problemas. Igual que con las dependencias, el resultado no fue casual:
+No está publicada en ningún servicio y no debe usarse con datos reales. Es un
+caso de estudio, no una aplicación de producción.
 
-- El acceso a la base de datos va por Entity Framework Core, sin SQL
-  concatenado.
-- Las contraseñas se hashean con PBKDF2, no con MD5 ni SHA1.
-- No hay secretos escritos en el fuente: la clave JWT llega por variable de
-  entorno.
-- No se ejecutan comandos del sistema con datos del usuario.
+## Los 17 hallazgos
 
-## Y sobre una app insegura: 10 hallazgos
-
-Un escaneo en verde no demuestra que la herramienta funcione. Para comprobarlo
-escribimos una app a propósito, con los fallos que más se repiten en código Go.
-
-```bash
-gosec -no-fail -fmt=json -out=informe.json ./banco-vulnerable/...
-```
-
-Resultado real:
+Resultado real de `gosec -no-fail -fmt=json`:
 
 | Severidad | Regla | Línea | Hallazgo |
 |---|---|---|---|
-| HIGH | G101 | 23 | Credencial escrita en el código |
-| HIGH | G101 | 26-28 | Clave privada RSA embebida |
-| MEDIUM | G114 | 97 | `http.ListenAndServe` sin timeouts |
-| MEDIUM | G204 | 37 | Subproceso con variable |
-| MEDIUM | G304 | 32 | Inclusión de archivo vía variable |
-| MEDIUM | G401 | 57 | Primitiva criptográfica débil |
-| MEDIUM | G401 | 58 | Primitiva criptográfica débil |
-| MEDIUM | G501 | 8 | Import bloqueado `crypto/md5` |
-| MEDIUM | G505 | 9 | Import bloqueado `crypto/sha1` |
-| MEDIUM | G710 | 90 | Redirección abierta por análisis de taint |
+| HIGH | G101 | 30 | Credencial escrita en el código |
+| HIGH | G101 | 33-35 | Clave privada RSA embebida |
+| HIGH | G702 | 39 | Inyección de comandos por análisis de taint |
+| HIGH | G703 | 45 | Recorrido de rutas por análisis de taint |
+| HIGH | G703 | 51 | Recorrido de rutas por análisis de taint |
+| MEDIUM | G112 | 138-143 | Slowloris: falta `ReadHeaderTimeout` |
+| MEDIUM | G202 | 56 | Concatenación de cadenas en SQL |
+| MEDIUM | G204 | 39 | Subproceso lanzado con variable |
+| MEDIUM | G304 | 45 | Inclusión de archivo vía variable |
+| MEDIUM | G401 | 70-71 | Primitiva criptográfica débil |
+| MEDIUM | G401 | 70 | Primitiva criptográfica débil |
+| MEDIUM | G501 | 14 | Import bloqueado `crypto/md5` |
+| MEDIUM | G505 | 15 | Import bloqueado `crypto/sha1` |
+| MEDIUM | G705 | 117 | XSS por análisis de taint |
+| MEDIUM | G705 | 122 | XSS por análisis de taint |
+| MEDIUM | G710 | 77 | Redirección abierta por análisis de taint |
+| LOW | G104 | 117 | Errores sin manejar |
 
-Dos detalles que merecen atención:
+**Resumen:** 5 HIGH, 11 MEDIUM, 1 LOW. 17 en total.
 
-**G710 usa análisis de tainted data.** No busca un patrón: sigue el valor de
-`nombre` desde `r.URL.Query().Get("nombre")` hasta la redirección, y advierte
-porque ese dato acabaría en la URL de destino sin validar. Es la clase de
-vulnerabilidad que un filtro por palabra clave no encuentra.
+## Lo que las reglas de taint aportan
 
-**G101 detectó la clave privada, no solo la contraseña.** El bloque de
-claves PEM embebido es un error habitual al copiar un ejemplo de la
-documentación. La regla lo reconoce por la forma del contenido.
+Cuatro de los hallazgos (G702, G703, G705, G710) no vienen de buscar una palabra
+clave: gosec sigue el valor desde que entra en la función hasta donde se usa.
 
-## Cómo integrarlo en la automatización
+En `/tipo`, el valor de `mime` llega de `r.URL.Query().Get("mime")` y acaba como
+argumento de `exec.Command`. G204 lo marca como "subproceso con variable", que es
+correcto pero genérico. **G702 lo marca como inyección de comandos**, porque
+sabe que ese valor no se ha validado. La misma línea, dos reglas, y la segunda
+es la que dice qué hacer.
 
-En `.github/workflows/security.yml`:
+Lo mismo con G703: `G304` dice "inclusión de archivo vía variable", y **G703 dice
+recorrido de rutas**, siguiendo que `ruta` viene de la petición sin comprobar.
+
+Es la diferencia entre un filtro por patrón y un análisis de flujo de datos.
+
+## Integrarlo en la automatización
 
 ```yaml
 - name: gosec
   run: |
-    gosec -fmt=json -out=gosec.json ./TaskFlow.Api/...
+    gosec -no-fail -fmt=json -out=gosec.json ./...
 ```
 
-`-no-fail` permite que el escaneo termine y muestre el informe completo; si se
-quiere que el pipeline falle con hallazgos de severidad alta:
+`-no-fail` deja que el escaneo termine y muestre el informe completo. Para que
+el pipeline falle:
 
 ```bash
-gosec -no-fail ./... -severity=HIGH   # solo informa
-gosec ./... -severity=HIGH             # falla el pipeline
+gosec ./... -severity=HIGH           # falla si hay hallazgos altos
+gosec -no-fail ./... -severity=HIGH  # solo informa
 ```
 
-Para evitar falsos positivos que desalienten en código correcto existe la
-directiva `#nosec`, que documenta la excepción en la misma línea:
+Para un error justificado hay una directiva en la misma línea:
 
 ```go
 ruta := validarComoInterno(ruta) // #nosec G304 -- ya sanitizada arriba
 ```
+
+La convención es no abusar de ella: cada `#nosec` es una excepción que alguien
+tiene que leer y justificar.
 
 ## Sobre los falsos negativos
 
 gosec analiza el flujo de información dentro del archivo y entre archivos del
 mismo paquete. Hay casos que se le escapan:
 
-- Lógica de negocio que es incorrecta aunque no exista ningún patrón peligroso.
-- Vulnerabilidades en dependencias, que son otro problema (y para eso está
-  Dependency-Check).
-- Código generado automáticamente que no se revisa.
+- **Lógica de negocio incorrecta** sin ningún patrón peligroso.
+- **Vulnerabilidades en dependencias**, que es otro problema: para eso está
+  OWASP Dependency-Check.
+- **Código generado automáticamente**, que normalmente no se revisa.
+- **Otro lenguaje**: gosec solo analiza Go.
 
-Herramientas de este tipo son un control dentro de un conjunto. Ninguna
-sustituye a revisar el diseño.
+El informe incluye el CWE de cada hallazgo, que permite priorizar por lo que la
+norma exige y no por la severidad que le asigne la herramienta.
 
 ## Conclusión
 
-El ejercicio dejó dos resultados que valen la pena por sí solos: el código
-nuestro pasa limpio con dos herramientas que no se habían usado antes, y una
-app deliberadamente insegura produce diez hallazgos correctamente clasificados
-por CWE.
+El ejercicio deja un resultado concreto: 17 hallazgos correctamente
+clasificados, cinco de ellos de severidad alta, sobre una aplicación escrita
+para contenerlos.
 
-Lo que agrega esto a los laboratorios anteriores es la comparación. Ya
-teníamos el análisis con SonarCloud, Semgrep y Snyk; ahora sumar dos
-perspectivas distintas sobre el mismo código es lo que permite afirmar que
-está limpio con una base algo más sólida que una sola herramienta.
+Lo que demuestra el análisis de taint es lo más aprovechable. Una herramienta
+que dice "aquí hay un `exec.Command` con variable" obliga a revisar; una que
+dice "el valor llega desde la petición sin validar" dice cuál es el problema.
+
+Ningún análisis estático sustituye a revisar el diseño, y un resultado limpio
+no significa que el código sea correcto: significa que esta herramienta no
+encontró nada. La diferencia entre las dos afirmaciones es la que hace que un
+informe sirva para algo.
 
 ## Enlaces
 
-- Código: https://github.com/UPT-FAING-EPIS/si784-2026-ii-si784-2026-ii-examen-u1-dejameingresar
-- Aplicación: https://taskflow-blue-alpha.vercel.app
+- Repositorio con el código y el informe: https://github.com/UPT-FAING-EPIS/si784-2026-ii-si784-2026-ii-examen-u1-dejameingresar
 - gosec: https://github.com/securego/gosec
+- CWE de la OWASP: https://cwe.mitre.org/

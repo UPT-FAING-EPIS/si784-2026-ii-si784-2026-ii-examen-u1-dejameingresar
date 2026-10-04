@@ -1,10 +1,10 @@
 # Detectar vulnerabilidades en Go con gosec
 
-En el laboratorio anterior revisamos las dependencias con OWASP
-Dependency-Check. Ahora el punto de mira es el código fuente, pero con una
-herramienta distinta a las que usamos en los laboratorios: **gosec**, un
-analizador estático que es estándar dentro del ecosistema de Go y
-publica reglas que mapean a CWE.
+En los laboratorios analizamos el código de una aplicación con SonarCloud,
+Snyk y Semgrep. En este ejercicio el punto de mira es el mismo código fuente,
+pero con una herramienta que no usamos en los labs: **gosec**, el analizador
+estático que forma parte del ecosistema de Go y publica reglas mapeadas a CWE
+de la OWASP.
 
 Para demostrar que la herramienta funciona de verdad, la aplicamos a dos
 códigos: el nuestro y uno escrito a propósito con fallos comunes.
